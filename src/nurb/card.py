@@ -89,9 +89,12 @@ def _verdict(findings):
     counted = {}
     for f in findings:
         counted.setdefault(f.severity, []).append(f.rule)
+    # Worst first, by the same rank the report sorts by. Alphabetically this would read
+    # "fail, note, warn", wedging what the part has accounted for between two things it
+    # has not, which is the wrong order to read a verdict in.
     parts = [
         f"{len(rules)} {severity} ({', '.join(sorted(set(rules)))})"
-        for severity, rules in sorted(counted.items())
+        for severity, rules in sorted(counted.items(), key=lambda kv: checks.RANK[kv[0]])
     ]
     return f"{len(findings)} finding{'s' if len(findings) != 1 else ''}: " + ", ".join(parts)
 
