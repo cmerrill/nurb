@@ -17,7 +17,7 @@ the source.
 import pathlib
 import re
 
-from . import checks
+from . import checks, supports
 
 # The block is found by MARK, not by the whole opening line. Matching the exact wording
 # would mean that changing it once duplicates the block in every card already on disk,
@@ -61,6 +61,24 @@ def facts(shape, ctx=None, findings=None, variants=None):
         lines.append(
             f"Projection: {reach:.1f}mm over a {height:.1f}mm back, "
             f"ratio {ratio:.2f} against a {ctx.projection_limit:.1f} limit"
+        )
+
+    # What this part is paying for in support material. Recorded because both ways of
+    # declaring it make the checks go quiet, and a count that only lives in a verdict
+    # nobody diffs is how a second cantilever sneaks in under a decision made about the
+    # first. As an AUTO line it is `nurb diff`'s business: "1 face" becoming "4 faces"
+    # is the regression, even though `nurb check` stays green through it.
+    carried = [
+        f
+        for f in findings or []
+        if f.rule == "overhang" and f.severity == checks.NOTE and f.value is not None
+    ]
+    marks = supports.regions(shape)
+    if carried or marks:
+        how = f"{len(marks)} mark{'s' if len(marks) != 1 else ''}" if marks else "the card"
+        lines.append(
+            f"Supported: {len(carried)} face{'s' if len(carried) != 1 else ''} "
+            f"carried on supports, by {how}"
         )
 
     lines.append(f"Checks: {_verdict(findings)}")
