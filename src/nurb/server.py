@@ -1408,7 +1408,7 @@ class Server:
             READS = ("opened", "closed_no_write")
 
             def on_any_event(self, event):
-                if event.is_directory or event.event_type in self.READS:
+                if event.is_directory or getattr(event, "event_type", None) in self.READS:
                     return
                 path = pathlib.Path(
                     getattr(event, "dest_path", "") or event.src_path
