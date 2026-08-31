@@ -1400,8 +1400,15 @@ class Server:
         global_config = checks.global_file().resolve()
 
         class Handler(FileSystemEventHandler):
+            # Reads are not changes. Newer watchdog reports inotify's IN_OPEN and
+            # IN_CLOSE_NOWRITE as events, and the server opens every card on every
+            # check, so without this the loop feeds itself: check reads the card, the
+            # read queues a rebuild, the rebuild checks, forever. It presents as a part
+            # rebuilding a few hundred times a minute with nothing on disk changing.
+            READS = ("opened", "closed_no_write")
+
             def on_any_event(self, event):
-                if event.is_directory:
+                if event.is_directory or event.event_type in self.READS:
                     return
                 path = pathlib.Path(
                     getattr(event, "dest_path", "") or event.src_path
